@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package encryption;
+
+message EncryptedData {
+    string vss_odometer_cipher = 1;
+    string pub_key = 2;
+}
+
+message Result {
+    string cost_cipher = 1;
+}
+
+service EncryptionService{
+    rpc ProcessEncryptedData (EncryptedData) returns(Result);
+}
