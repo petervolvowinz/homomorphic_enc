@@ -2,6 +2,8 @@
 
 // mod bin::client;
 
+use std::io::ErrorKind::HostUnreachable;
+use std::pin::Pin;
 use homomorphic_enc::HomomorphicIntegers;
 
 use tonic::{transport::Server, Request, Response, Status};
@@ -22,6 +24,16 @@ impl EncryptionService for MyEncryptionService {
         &self,
         request: Request<EncryptedData>,
     ) -> Result<Response<EncResult>, Status> {
+        
+        let mut homomorphic = HomomorphicIntegers::new();
+        let mut serialized_key = request.get_ref().pub_key.as_str();
+        let mut pkey = homomorphic.get_pinned_empty_public_key();
+        let pinned_key = pkey.as_mut().expect("public key allocation failed");
+         
+        homomorphic.get_deserialized_jsonkey(pinned_key, serialized_key.parse().unwrap());
+        //TODO use pinned_key to encrypt fee and rate here..
+        
+        
         println!("Got a request: {:?}", request);
         println!("serialized : {:?}", request);
         let response = EncResult {

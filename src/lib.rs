@@ -1,7 +1,9 @@
-use cxx::bridge;
+use std::pin::Pin;
+use cxx::{bridge, let_cxx_string};
 use openfhe::cxx::{CxxString,CxxVector, UniquePtr};
 use openfhe::{cxx, ffi as ffi};
-use openfhe::ffi::{CryptoContextDCRTPoly, KeyPairDCRTPoly, ParamsBFVRNS, ParamsCKKSRNS, PublicKeyDCRTPoly,DCRTPolySerializePublicKeyToString};
+use openfhe::ffi::{CryptoContextDCRTPoly, KeyPairDCRTPoly, ParamsBFVRNS, ParamsCKKSRNS, PublicKeyDCRTPoly, 
+                   DCRTPolySerializePublicKeyToString, DCRTPolyDeserializePublicKeyFromString, DCRTPolyGenNullPublicKey};
 
 
 
@@ -55,6 +57,15 @@ impl HomomorphicIntegers {
     pub fn get_serialized_jsonkey(self, pkey : &UniquePtr<PublicKeyDCRTPoly>) -> String{
         let mut serialized_json_key = DCRTPolySerializePublicKeyToString(&pkey);
         return convert_to_rust_string(serialized_json_key);
+    }
+    
+    pub fn get_deserialized_jsonkey(self, pkey: Pin<&mut PublicKeyDCRTPoly>, serialized_jsokey : String){
+        let_cxx_string!(cxx_json = serialized_jsokey);
+        DCRTPolyDeserializePublicKeyFromString(pkey, &*cxx_json);
+    }
+    
+    pub fn get_pinned_empty_public_key(&mut self) -> cxx::UniquePtr<PublicKeyDCRTPoly> {
+        return DCRTPolyGenNullPublicKey()
     }
 }
 
