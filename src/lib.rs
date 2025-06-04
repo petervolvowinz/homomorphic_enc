@@ -2,13 +2,12 @@ use std::pin::Pin;
 use cxx::{bridge, let_cxx_string};
 use openfhe::cxx::{CxxString,CxxVector, UniquePtr};
 use openfhe::{cxx, ffi as ffi};
-use openfhe::ffi::{CryptoContextDCRTPoly, KeyPairDCRTPoly, ParamsBFVRNS, ParamsCKKSRNS, PublicKeyDCRTPoly, 
-                   DCRTPolySerializePublicKeyToString, DCRTPolyDeserializePublicKeyFromString, DCRTPolyGenNullPublicKey};
+use openfhe::ffi::{CryptoContextDCRTPoly, KeyPairDCRTPoly, ParamsBFVRNS, ParamsCKKSRNS, PublicKeyDCRTPoly, DCRTPolySerializePublicKeyToString, DCRTPolyDeserializePublicKeyFromString, DCRTPolyGenNullPublicKey, CiphertextDCRTPoly, DCRTPolySerializeCiphertextToString};
 
 
 
 pub struct HomomorphicIntegers {
-      _cc_params_bfvrns: cxx::UniquePtr<ParamsBFVRNS>,
+    _cc_params_ckksrns: cxx::UniquePtr<ParamsCKKSRNS>,
       _cc: cxx::UniquePtr<CryptoContextDCRTPoly>,
       key_pair:  Option<cxx::UniquePtr<KeyPairDCRTPoly>>
 }
@@ -24,21 +23,25 @@ fn convert_to_rust_string(cpp_string: UniquePtr<CxxString>) -> String {
 
 
 impl HomomorphicIntegers {
+    
     pub fn new() -> Self {
-        // Init the integer homo_m_module
-        let mut _cc_params_bfvrns = ffi::GenParamsBFVRNS();
-        // setup the ring
-        _cc_params_bfvrns.pin_mut().SetPlaintextModulus(65537);
-        _cc_params_bfvrns.pin_mut().SetMultiplicativeDepth(2);
-        let mut _cc = ffi::DCRTPolyGenCryptoContextByParamsBFVRNS(&_cc_params_bfvrns);
-        // prata senare
+        let _mult_depth: u32 = 1;
+        let _scale_mod_size: u32 = 50;
+        let _batch_size: u32 = 8;
+
+        let mut _cc_params_ckksrns = ffi::GenParamsCKKSRNS();
+        _cc_params_ckksrns.pin_mut().SetMultiplicativeDepth(_mult_depth);
+        _cc_params_ckksrns.pin_mut().SetScalingModSize(_scale_mod_size);
+        _cc_params_ckksrns.pin_mut().SetBatchSize(_batch_size);
+
+        let _cc = ffi::DCRTPolyGenCryptoContextByParamsCKKSRNS(&_cc_params_ckksrns);
         _cc.EnableByFeature(ffi::PKESchemeFeature::PKE);
         _cc.EnableByFeature(ffi::PKESchemeFeature::KEYSWITCH);
         _cc.EnableByFeature(ffi::PKESchemeFeature::LEVELEDSHE);
         // generate keypair
         let mut key_pair = _cc.KeyGen();
         HomomorphicIntegers {
-            _cc_params_bfvrns,
+            _cc_params_ckksrns,
             _cc,
             key_pair:None,
         }
@@ -54,7 +57,7 @@ impl HomomorphicIntegers {
         return self.key_pair.as_ref().expect("key pair not initialized").GetPublicKey();
     }
     
-    pub fn get_serialized_jsonkey(self, pkey : &UniquePtr<PublicKeyDCRTPoly>) -> String{
+    pub fn get_serialized_jsonkey(&mut self, pkey : &UniquePtr<PublicKeyDCRTPoly>) -> String{
         let mut serialized_json_key = DCRTPolySerializePublicKeyToString(&pkey);
         return convert_to_rust_string(serialized_json_key);
     }
@@ -67,5 +70,21 @@ impl HomomorphicIntegers {
     pub fn get_pinned_empty_public_key(&mut self) -> cxx::UniquePtr<PublicKeyDCRTPoly> {
         return DCRTPolyGenNullPublicKey()
     }
+
+    pub fn get_serialized_cipher_text(&mut self, cipher : &UniquePtr<CiphertextDCRTPoly>)  -> String{
+        let serialized_json_key = DCRTPolySerializeCiphertextToString(&cipher);
+        return convert_to_rust_string(serialized_json_key);
+    }
+    pub fn get_cipher_text(&mut self,pkey : &UniquePtr<PublicKeyDCRTPoly>, val: Option<f64>) -> UniquePtr<CiphertextDCRTPoly>{
+        let mut odometer = CxxVector::<f64>::new();
+        odometer.pin_mut().push(val.unwrap());
+        
+        let _dcrt_poly_params = ffi::DCRTPolyGenNullParams();
+        let packed_text = self._cc.MakeCKKSPackedPlaintextByVectorOfDouble(&odometer, 1, 0, &_dcrt_poly_params, 0);
+
+       return self._cc.EncryptByPublicKey(pkey, &packed_text);
+    }
+    
+    
 }
 

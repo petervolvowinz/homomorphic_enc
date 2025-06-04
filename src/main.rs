@@ -8,6 +8,9 @@ use homomorphic_enc::HomomorphicIntegers;
 
 use tonic::{transport::Server, Request, Response, Status};
 
+const RATE_KM: f64 = 0.2; // in some currency
+const FEE: f64 = 100.0;  // Some fee related to a fleet
+
 pub mod encryption {
     tonic::include_proto!("encryption");
 }
