@@ -1,6 +1,6 @@
 use encryption::encryption_service_client::EncryptionServiceClient;
 use encryption::EncryptedData;
-use homomorphic_enc::HomomorphicIntegers;
+use homomorphic_enc::HomomorphicFloats;
 
 
 // A VSS based signal where all values are being treated as string for simplicity
@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     
     // get a public key and Serialize
-   let mut homomorphic = HomomorphicIntegers::new();
+   let mut homomorphic = HomomorphicFloats::new();
    homomorphic.genkeypair();
    let mut pkey = homomorphic.getpubkey();
   
