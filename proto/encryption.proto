@@ -5,6 +5,7 @@ package encryption;
 message EncryptedData {
     string vss_odometer_cipher = 1;
     string pub_key = 2;
+    string mul_eval_keys = 3;
 }
 
 message Result {

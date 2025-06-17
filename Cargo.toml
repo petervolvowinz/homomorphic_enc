@@ -10,7 +10,7 @@ tonic = "0.13.1"
 prost = "0.13"
 tokio = { version = "1", features = ["full"] }
 #openfhe = "0.2.0"
-openfhe = {path = "/Users/peterwinzell/RustroverProjects/openfhe-rs"}
+openfhe = {path = "/Users/PWINZELL/CLionProjects/openfhe-rs"}
 [build-dependencies]
 cxx-build = "1.0"
 tonic-build = "0.13.1"

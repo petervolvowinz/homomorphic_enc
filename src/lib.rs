@@ -4,7 +4,8 @@ use openfhe::cxx::{CxxString,CxxVector, UniquePtr};
 use openfhe::{cxx, ffi as ffi};
 use openfhe::ffi::{CryptoContextDCRTPoly, KeyPairDCRTPoly, ParamsBFVRNS, ParamsCKKSRNS, PublicKeyDCRTPoly, DCRTPolySerializePublicKeyToString, DCRTPolyDeserializePublicKeyFromString, 
                    DCRTPolyGenNullPublicKey, CiphertextDCRTPoly, 
-                   DCRTPolySerializeCiphertextToString,DCRTPolyDeserializeCiphertextFromString, DCRTPolyGenNullCiphertext};
+                   DCRTPolySerializeCiphertextToString,DCRTPolyDeserializeCiphertextFromString, DCRTPolyGenNullCiphertext,
+                   DCRTPolySerializeEvalMultKeysToString, DCRTPolyDeserializeEvalMultKeysFromString};
 
 
 
@@ -41,7 +42,7 @@ impl HomomorphicFloats {
         _cc.EnableByFeature(ffi::PKESchemeFeature::KEYSWITCH);
         _cc.EnableByFeature(ffi::PKESchemeFeature::LEVELEDSHE);
         // generate keypair
-        let mut key_pair = _cc.KeyGen();
+       // let mut key_pair = _cc.KeyGen();
         HomomorphicFloats {
             _cc_params_ckksrns,
             _cc,
@@ -50,9 +51,11 @@ impl HomomorphicFloats {
     }
     
     pub fn genkeypair(&mut self){
-        let mut key_pair = self._cc.KeyGen();
-        // let mut pub_key = &key_pair.GetPublicKey(); 
+        let key_pair = self._cc.KeyGen();
+        // let mut pub_key = &key_pair.GetPublicKey(); '
+        self._cc.EvalMultKeyGen(&key_pair.GetPrivateKey());
         self.key_pair = Some(key_pair);
+        
     }
     
   pub fn getpubkey(&self) -> UniquePtr<PublicKeyDCRTPoly> {
@@ -115,6 +118,25 @@ impl HomomorphicFloats {
         let temp_c = self._cc.EvalMultByCiphertexts(&rate_cipher, &dist_cipher);
         return self._cc.EvalAddByCiphertexts(&fee_cipher, &temp_c);
     }
+    
+    pub fn get_decrypted_cost_from_result_cipher(&self, result_cipher : UniquePtr<CiphertextDCRTPoly>) -> String{
+        let mut privkey= self.key_pair.as_ref().expect("unable to get pivate key").GetPrivateKey();
+
+        let mut _result = ffi::GenNullPlainText();
+        self._cc.DecryptByPrivateKeyAndCiphertext(&privkey, &result_cipher, _result.pin_mut());
+        _result.SetLength(1);
+        return _result.GetString();
+    }
+
+    pub fn get_serialized_eval_keys(&mut self)  -> String{
+        let serialized_eval_key = DCRTPolySerializeEvalMultKeysToString(&*self._cc);
+        return convert_to_rust_string(serialized_eval_key);
+    }
+    
+    pub fn get_deserialized_eval_keys(&mut self, ser_eval_keys : String) {
+        let_cxx_string!(cxx_json = ser_eval_keys);
+        DCRTPolyDeserializeEvalMultKeysFromString(&*self._cc, &*cxx_json);
+    }    
     
 }
 
