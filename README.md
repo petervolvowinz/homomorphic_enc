@@ -1,2 +1,4 @@
-**A grpc example where we use homomprphic encryption**
+**Homomorphic encryption example over gRPC**
+
+
 <TBC>
