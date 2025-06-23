@@ -1,4 +1,5 @@
 use std::pin::Pin;
+use std::{io::{self, Write}, thread, time};
 use cxx::{bridge, let_cxx_string};
 use openfhe::cxx::{CxxString,CxxVector, UniquePtr};
 use openfhe::{cxx, ffi as ffi};
@@ -24,6 +25,22 @@ fn convert_to_rust_string(cpp_string: UniquePtr<CxxString>) -> String {
         .to_owned()                   // Convert &str to Rust-owned String
 }
 
+fn print_with_delay_same_line(s: &str) {
+    let delay = time::Duration::from_millis(100);
+
+    for ch in s.chars() {
+        print!("{}", ch);
+        io::stdout().flush().unwrap(); // flush to make sure it's printed immediately
+        thread::sleep(delay);
+    } // optional: move to the next line at the end
+}
+
+pub fn print_delay(s: &str){
+    let dots = "...".to_string();
+    print_with_delay_same_line(&dots);
+    print_with_delay_same_line(s);
+    println!();
+}
 
 impl HomomorphicFloats {
     
@@ -132,11 +149,11 @@ impl HomomorphicFloats {
         let serialized_eval_key = DCRTPolySerializeEvalMultKeysToString(&*self._cc);
         return convert_to_rust_string(serialized_eval_key);
     }
-    
+
     pub fn get_deserialized_eval_keys(&mut self, ser_eval_keys : String) {
         let_cxx_string!(cxx_json = ser_eval_keys);
         DCRTPolyDeserializeEvalMultKeysFromString(&*self._cc, &*cxx_json);
-    }    
+    }
     
 }
 

@@ -11,6 +11,7 @@ prost = "0.13"
 tokio = { version = "1", features = ["full"] }
 #openfhe = "0.2.0"
 openfhe = {path = "/Users/PWINZELL/CLionProjects/openfhe-rs"}
+time = "0.3.41"
 [build-dependencies]
 cxx-build = "1.0"
 tonic-build = "0.13.1"
